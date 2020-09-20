@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <title>Chart</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body>
+  <div id="container">
+    <div id="plot">
+      <div id="signal"><canvas id="chart"></canvas></div>
+      <div id="lcurve1"><canvas id="training"></canvas></div>
+      <div id="lcurve2"><canvas id="validation"></canvas></div>
+    </div>
+    <div id="display">
+      <div id="prediction">
+      </div>
+      <div id="actual">
+      </div>
+      <div id="accuracy">
+      </div>
+      <div id="description">
+        This project implements a 1D convolutional neural network in PyTorch, trained to classify ECG signals from the <a href="https://www.kaggle.com/shayanfazeli/heartbeat">MIT-BIH</a> dataset.
+        The dataset consisted of over eighty-thousand samples assigned to 5 different categories of arrythmia. It would be fair to say
+        that the dataset was pretty considerably unbalanced, however, upsampling didn't seem to increase or decrease the efficacy of the 
+        model. The model architechure I used was two sets of the standard convolutional, batch norm, max pooling, with a fully connected on the output.
+        Click the graph to load a random signal from a fully balanced, hundred sample subset of the data I used for validation.
+        Credit to Sentdex for his videos on machine learning in PyTorch and to GregoireDC from Kaggle for his intuition into pre-processing this dataset.
+      </div>
+    </div>
+  </div>
+
+  <script>
+
+      var data = [];
+      var labels = [];
+
+      function init() {
+        fetch('./data.json')
+          .then(function (response) {
+            return response.json();
+          })
+          .then(function (data) {
+            df = data;
+            var chartdata = [];
+            var labels = [];
+
+            var lossdata = [];
+            var accdata = [];
+
+            var vallossdata = [];
+            var valaccdata = [];
+
+            var batchlabels = [];
+
+            var rand = Math.floor(Math.random() * 99) + 1;
+
+            for(var i=0; i<187; i++) {
+              chartdata.push(df["data"][rand][i])
+              labels.push(i)
+            }
+
+            for(var i=0; i<15; i++) {
+              lossdata.push(df["loss"][i])
+              accdata.push(df["acc"][i])
+              vallossdata.push(df["val_loss"][i])
+              valaccdata.push(df["val_acc"][i])
+              batchlabels.push(i)
+            }
+
+            var prediction = df["data"][rand][187]
+            var actual = df["data"][rand][188]
+
+            var mapping = {
+              0: 'Sinus Rhythm',
+              1: 'Ventricular',
+              2: 'Supraventricular',
+              3: 'Fusion Beat',
+              4: 'Unclassified'
+            }
+
+            if(prediction==actual){
+              setColour(true);
+            }else{
+              setColour(false);
+            }
+
+            document.getElementById('prediction').innerText = 'Prediction: ' + mapping[prediction]
+            document.getElementById('actual').innerText = 'Actual: ' + mapping[actual]
+            document.getElementById('accuracy').innerText = 'Model Accuracy: ' + df["val_acc"][14].toFixed(3);
+
+            training.data.datasets[0].data = lossdata;
+            training.data.datasets[1].data = accdata;
+            training.data.labels = batchlabels;
+
+            validation.data.datasets[0].data = vallossdata;
+            validation.data.datasets[1].data = valaccdata;
+            validation.data.labels = batchlabels;
+
+            chart.data.datasets[0].data = chartdata;
+            chart.data.labels = labels;
+
+            chart.update();
+            training.update();
+            validation.update();
+          });
+      }
+
+      function setColour(boolean){
+        if(boolean){
+          chart.data.datasets[0].borderColor = '#388a24';
+          chart.data.datasets[0].backgroundColor = '#388a24';
+        } else {
+          chart.data.datasets[0].borderColor = '#990b2e';
+          chart.data.datasets[0].backgroundColor = '#990b2e';
+        }
+      }
+
+      var ctx1 = document.getElementById('chart').getContext('2d');
+      var ctx2 = document.getElementById('training').getContext('2d');
+      var ctx3 = document.getElementById('validation').getContext('2d');
+
+      var chart = new Chart(ctx1, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              data: data,
+              fill: false
+            }],
+          },
+          options: {
+            legend: false,
+            responsive: true,
+            tooltips: {
+              enabled: false,
+            },
+            hover: {
+              mode: 'nearest',
+              intersect: true
+            },
+            scales: {
+              xAxes: [{
+                display: false,
+                scaleLabel: {
+                  display: true,
+                }
+              }],
+              yAxes: [{
+                display: true,
+                scaleLabel: {
+                  display: true,
+                }
+              }]
+            },
+            elements: {
+              point: {
+                radius: 0
+              }
+            },
+            onClick: function (e) {
+              var activePoints = chart.getElementsAtEvent(e);
+              if (activePoints.length > 0) {
+                var clickedElementIndex = activePoints[0]["_index"];
+                var label = chart.data.labels[clickedElementIndex];
+              } else {
+                init();
+              }
+            }
+          }
+        });
+
+      var training = new Chart(ctx2, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              data: data,
+              fill: false,
+              borderColor: '#2c6bb8',
+              backgroundColor: '#2c6bb8',
+            },{
+              data: data,
+              fill: false,
+              borderColor: '#fac832',
+              backgroundColor: '#fac832',
+            }],
+          },
+          options: {
+            title: {
+              display: true,
+              text: 'Training (Accuracy & Loss)',
+            },
+            legend: false,
+            responsive: true,
+            tooltips: {
+              enabled: false,
+            },
+            hover: {
+              mode: 'nearest',
+              intersect: true
+            },
+            scales: {
+              xAxes: [{
+                display: false,
+                scaleLabel: {
+                  display: true,
+                }
+              }],
+              yAxes: [{
+                display: true,
+                scaleLabel: {
+                  display: true,
+                }
+              }]
+            },
+            elements: {
+              point: {
+                radius: 0
+              }
+            }
+          }
+        });
+      var validation = new Chart(ctx3, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              data: data,
+              fill: false,
+              borderColor: '#2c6bb8',
+              backgroundColor: '#2c6bb8',
+            },{
+                data: data,
+                fill: false,
+                borderColor: '#fac832',
+                backgroundColor: '#fac832',
+            }],
+          },
+          options: {
+            title: {
+              display: true,
+              text: 'Validation (Accuracy & Loss)',
+            },
+            legend: false,
+            responsive: true,
+            tooltips: {
+              enabled: true,
+            },
+            hover: {
+              mode: 'nearest',
+              intersect: true
+            },
+            scales: {
+              xAxes: [{
+                display: false,
+                scaleLabel: {
+                  display: true,
+                }
+              }],
+              yAxes: [{
+                display: true,
+                scaleLabel: {
+                  display: true,
+                }
+              }]
+            },
+            elements: {
+              point: {
+                radius: 0
+              }
+            }
+          }
+        });
+
+      init();
+
+  </script>
+</body>
+</html>
