@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <title>ECG Signal Classification</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body>
+  <div id="container">
+    <div id="main">
+      <div id="signal"><canvas id="chart"></canvas></div>
+      <div id="description">
+        <div id="prediction"></div>
+        <div id="actual"></div>
+        <div id="accuracy"></div>
+        <div id="text">
+          This project implements a 1D convolutional neural network in PyTorch, trained to classify ECG signals from the <a href="https://www.kaggle.com/shayanfazeli/heartbeat">MIT-BIH</a>
+          dataset. The dataset consisted of over eighty-thousand samples assigned to 5 different categories of arrhythmia. It
+          would be fair to say that the dataset was pretty considerably unbalanced, however, up sampling didn't seem to effect
+          performance at all. The model architecture I used was two sets of convolutional, batch norm, max pooling, with dense
+          layers used for classification. I produced learning curves to visualise both the change over time in training loss and
+          accuracy, as well as validation loss and accuracy. I also produced a confusion matrix to display how well this model
+          makes predictions. Overall the model fit the data very well, achieving 97.5% validation accuracy after only one epoch.
+          <i id="click">Click the graph</i> to load a random signal from a fully balanced, hundred sample subset of the data I used for validation.
+          Credit to Sentdex for his videos on machine learning in PyTorch and to GregoireDC from Kaggle for his intuition into
+          pre-processing this dataset.
+        </div>
+      </div>
+    </div>
+    <div id="stats">
+      <img src="./learning_curves2.png">
+      <img src="./confusion_matrix.png">
+    </div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
